@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script>
+      const socket = io();
+      const warningCodes = [];
+      const senderWarningCodes = [];
+      const notificationWarningIds = [];
+      const errorCodes = [];
+      const senderErrorCodes = [];
+      const notificationErrorIds = [];
+
+      socket.on("errorOccurred", (errorMessage) => {
+        toastr.options.timeOut = 0;
+        toastr.options.extendedTimeOut = 0;
+        toastr.options.preventDuplicates = true;
+        toastr.options.newestOnTop = false;
+        toastr.options.tapToDismiss = false;
+
+        const notificationId = toastr.error(errorMessage);
+        notificationErrorIds.push(notificationId);
+      });
+
+
+
+      let position_sensor_resolution = [ 1024 , 1024 , 665 , 1024 ];
+      let position_sensor_stroke = [ 240 , 240 , 90 , 240 ];
+      let position_sensor_offset_kinematics =  [1174 , 830 , 235 , 420];
+      let position_sensor_dir_inverted_kinematics =  [-1 , 1 , 1 , 1] ;
+
+    function addErrorCode(k, code, errorDB) {
+  if (code !== 0 && code !== -1 && code !== undefined) {
+    for (let i = 0; i < errorCodes.length; i++) {
+      if (errorCodes[i] === code && senderErrorCodes[i] === k) {
+        return;
+      }
+    }
+    errorCodes.push(code);
+    senderErrorCodes.push(k);
+    toastr.options.timeOut = 0;
+    toastr.options.extendedTimeOut = 0;
+    toastr.options.preventDuplicates = true;
+    toastr.options.newestOnTop = false;
+    toastr.options.tapToDismiss = false;
+    // toastr.options.onclick = function() {
+    //     const modalElem = document.querySelector('.modal1');
+    //     modalElem.style.visibility = 'visible';
+    //     modalElem.style.opacity = 1;
+    //     window.addEventListener('keydown', closeModal);
+  
+    //     function closeModal(event) {
+    //       const target = event.target;
+  
+    //       if (
+    //         target === modalElem ||
+    //         (target.classList.contains('modal__close')) ||
+    //         event.code === 'Escape'
+    //       ) {
+    //         modalElem.style.opacity = 0;
+  
+    //         setTimeout(() => {
+    //           modalElem.style.visibility = 'hidden';
+    //         }, 300);
+  
+    //         window.removeEventListener('keydown', closeModal);
+    //       }
+    //     }
+    //   };
+    let group = null;
+    let message = '';
+    switch (k) {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+        message = `Axes${k + 1}`;
+        group = 1;
+        break;
+      case 4:
+        message = "Master";
+        group = 2;
+        break;
+    }
+    
+    const error = errorDB.errors.find((error) => error.id === code && error.group === group);
+    
+    if (error) {
+      const messageError = error.message;
+      const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> ${messageError}`);
+      notificationErrorIds.push(notificationIdError);
+    } else {
+      const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> Not found in DB`);
+      notificationErrorIds.push(notificationIdError);
+    }
+  }
+}
+        function addWarningCode(k, code, warningDB) {
+
+
+          if (code <= 16000 && code > 0) {
+            for (let i = 0; i < warningCodes.length; i++) {
+              if (warningCodes[i] === code && senderWarningCodes[i] === k) {
+                return;
+              }
+            }
+            warningCodes.push(code);
+            senderWarningCodes.push(k);
+            toastr.options.timeOut = 0;
+            toastr.options.extendedTimeOut = 0;
+            toastr.options.preventDuplicates = true;
+            toastr.options.newestOnTop = false;
+            toastr.options.tapToDismiss = false;
+            let message = '';
+            let group = null;
+            switch(k){
+              case 0:
+              case 1:
+              case 2:
+              case 3:
+                message = `Axes${k + 1}`;
+                group = 1;
+              break;
+              case 4:
+                message = "Master";
+                group = 2;
+              break;
+            }
+
+            const warning = warningDB.warnings.find((warning) => warning.id === code && warning.group === group);
+
+            if (warning) {
+              const messageWarning = warning.message;
+              const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> ${messageWarning}`);
+              notificationWarningIds.push(notificationIdWarning);
+            } else {
+              const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> Not found in DB`);
+              notificationWarningIds.push(notificationIdWarning);
+            }
+          } else if (code > 16000) {
+            let codeToRemove = code - 16000;
+            const index = warningCodes.indexOf(codeToRemove);
+            if (index > -1) {
+              warningCodes.splice(index, 1);
+              const notificationIdToRemove = notificationWarningIds[index];
+              toastr.clear(notificationIdToRemove); 
+              notificationWarningIds.splice(index, 1); 
+            }
+          }else if(code === 0){
+            let index = senderWarningCodes.indexOf(k);
+            while(index>-1)
+            {
+              warningCodes.splice(index, 1);
+              senderWarningCodes.splice(index, 1);
+              const notificationIdToRemove = notificationWarningIds[index];
+              toastr.clear(notificationIdToRemove); 
+              notificationWarningIds.splice(index, 1); 
+              index = senderWarningCodes.indexOf(k);
+            }
+          }
+        }
+
+      socket.on("data", (data) => {
+        for (let i = 0; i < 4; i++) {
+          document.getElementById(`parity${i}`).innerHTML = data.parity[i];
+          document.getElementById(`debug${i}`).innerHTML = data.debug[i];
+          document.getElementById(`error${i}`).innerHTML = data.error[i];
+          document.getElementById(`warning${i}`).innerHTML = data.warning[i];
+          document.getElementById(`driverState${i}`).innerHTML =
+            data.driverState[i];
+          document.getElementById(`workingMode${i}`).innerHTML =
+            data.workingMode[i];
+          document.getElementById(`motionOnGoing${i}`).innerHTML =
+            data.motionOnGoing[i];
+          document.getElementById(`onTargetPosition${i}`).innerHTML =
+            data.onTargetPosition[i];
+          document.getElementById(`targetPosition${i}`).innerHTML =
+            data.targetPosition[i];
+          document.getElementById(`actualPosition${i}`).innerHTML =
+            data.actualPosition[i];
+          document.getElementById(`actualPositionDeg${i}`).innerHTML =
+            Math.round(10*position_sensor_dir_inverted_kinematics[i] *position_sensor_stroke[i]/position_sensor_resolution[i]*(data.actualPosition[i] - position_sensor_offset_kinematics[i]), 1)/10;
+          document.getElementById(`actualTorque${i}`).innerHTML =
+            data.actualTorque[i];
+          document.getElementById(`actualFrequency${i}`).innerHTML =
+            data.actualFrequency[i];
+          document.getElementById(`errorCode${i}`).innerHTML =
+            data.errorCode[i];
+            document.getElementById(`warningCode${i}`).innerHTML =
+            data.warningCode[i];
+}
+
+        // CARTESIAN DATA
+        document.getElementById("axesX").innerHTML = Math.round(data.axesX);
+        document.getElementById("axesY").textContent = Math.round(data.axesY);
+        document.getElementById("axesZ").innerHTML = Math.round(data.axesZ);
+        document.getElementById("axesG").innerHTML = Math.round(data.axesG);
+
+        // MASTER DATA
+          document.getElementById(`parity4`).innerHTML = data.parity[4];
+          document.getElementById(`debug4`).innerHTML = data.debug[4];
+          document.getElementById(`error4`).innerHTML = data.error[4];
+          document.getElementById(`warning4`).innerHTML = data.warning[4];
+          document.getElementById(`motionOnGoing4`).innerHTML =
+            data.motionOnGoing[4];
+          document.getElementById(`errorCode4`).innerHTML =
+            data.errorCode[4];
+            document.getElementById(`warningCode4`).innerHTML =
+            data.warningCode[4];
+        // BATTERY
+        // document.getElementById('battery-value').textContent = data.batteryStatus;
+        let previousValue = 100;
+        document.getElementById('battery-value').textContent = Math.min(data.batteryStatus, previousValue);
+        previousValue = data.batteryStatus;
+            document.getElementById('battery-level').style.width = data.batteryStatus + '%';
+
+              // console.log(`Battery status: ${data.batteryStatus}`);
+
+        //Save error code in array and delete all data if receive 0 from back  
+        let errorDB = data.errorDB;
+        let warningDB = data.warningDB;
+        let allErrorZero = true;
+
+        for (let k = 0; k < 5; k++) {
+          let currentErrorCode = data.errorCode[k];
+          if(currentErrorCode !== 0 ){
+            allErrorZero = false;
+          }
+          addErrorCode(k ,currentErrorCode, errorDB);
+
+        //Save warning code in array, controll if into the range 1-16000, calc and delete if more than 16000   
+        let currentWarningCode = data.warningCode[k];
+
+          addWarningCode(k, currentWarningCode, warningDB);
+      }
+            if (allErrorZero) {
+            errorCodes.length = 0;
+            notificationErrorIds.forEach(notificationIdError => toastr.clear(notificationIdError));
+            notificationErrorIds.length = 0;
+            return;
+          }
+      });
+      // socket.emit("data");
+    </script>
+    
+
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+  </head>
+  <body>
+    <section class="section section_data">
+      <h1 class="section_title main_title">Allenaz srl</h1>
+      <div class="battery" id="battery">
+        <span class="battery-value" id="battery-value">100</span>
+        <span class="battery-percent">%</span>
+        <div class="battery-level" id="battery-level"></div>
+      </div>
+      <!-- <div class="modal modal1">
+        <div class="modal__main">
+          <h2 class="modal__title">Modal Window</h2>
+          
+          <div class="modal__container">
+            <p>DO RIGHT</p>
+            <p>HTML CSS JavaScript</p>
+          </div>
+          <button class="modal__btn">Some BTN</button>
+          <button class="modal__close">&#10006;</button>
+        </div>
+      </div> -->
+      <div class="container">
+        <div class="blur">
+          <div class="data">
+            <ul class="data_list">
+              <h2 class="data_title">Axis 1</h2>
+              <h3 class="data_title_sub">Live data</h3>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Parity: <span class="data_item_value" id="parity0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Debug: <span class="data_item_value" id="debug0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Error: <span class="data_item_value" id="error0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Warning: <span class="data_item_value" id="warning0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Motion on going:
+                  <span class="data_item_value" id="motionOnGoing0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  On Target position:
+                  <span class="data_item_value" id="onTargetPosition0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Driver state:
+                  <span class="data_item_value" id="driverState0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Working mode:
+                  <span class="data_item_value" id="workingMode0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Target position:
+                  <span class="data_item_value" id="targetPosition0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual position:
+                  <span class="data_item_value" id="actualPosition0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual position°:
+                  <span class="data_item_value" id="actualPositionDeg0"></span>
+                  </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual torque:
+                  <span class="data_item_value" id="actualTorque0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual frequency:
+                  <span class="data_item_value" id="actualFrequency0"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Error code:
+                  <span class="data_item_value" id="errorCode0"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Warning code:
+                  <span class="data_item_value" id="warningCode0"></span>
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="data">
+            <ul class="data_list">
+              <h2 class="data_title">Axis 2</h2>
+              <h3 class="data_title_sub">Live data</h3>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Parity: <span class="data_item_value" id="parity1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Debug: <span class="data_item_value" id="debug1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Error: <span class="data_item_value" id="error1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Warning: <span class="data_item_value" id="warning1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Motion on going:
+                  <span class="data_item_value" id="motionOnGoing1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  On Target position:
+                  <span class="data_item_value" id="onTargetPosition1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Driver state:
+                  <span class="data_item_value" id="driverState1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Working mode:
+                  <span class="data_item_value" id="workingMode1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Target position:
+                  <span class="data_item_value" id="targetPosition1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual position:
+                  <span class="data_item_value" id="actualPosition1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual position°:
+                  <span class="data_item_value" id="actualPositionDeg1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual torque:
+                  <span class="data_item_value" id="actualTorque1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual frequency:
+                  <span class="data_item_value" id="actualFrequency1"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Error code:
+                  <span class="data_item_value" id="errorCode1"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Warning code:
+                  <span class="data_item_value" id="warningCode1"></span>
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="data">
+            <ul class="data_list">
+              <h2 class="data_title">Axis 3</h2>
+              <h3 class="data_title_sub">Live data</h3>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Parity: <span class="data_item_value" id="parity2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Debug: <span class="data_item_value" id="debug2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Error: <span class="data_item_value" id="error2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Warning: <span class="data_item_value" id="warning2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Motion on going:
+                  <span class="data_item_value" id="motionOnGoing2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  On Target position:
+                  <span class="data_item_value" id="onTargetPosition2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Driver state:
+                  <span class="data_item_value" id="driverState2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Working mode:
+                  <span class="data_item_value" id="workingMode2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Target position:
+                  <span class="data_item_value" id="targetPosition2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual position:
+                  <span class="data_item_value" id="actualPosition2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual position°:
+                  <span class="data_item_value" id="actualPositionDeg2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual torque:
+                  <span class="data_item_value" id="actualTorque2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual frequency:
+                  <span class="data_item_value" id="actualFrequency2"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Error code:
+                  <span class="data_item_value" id="errorCode2"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Warning code:
+                  <span class="data_item_value" id="warningCode2"></span>
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="data">
+            <ul class="data_list">
+              <h2 class="data_title">Axis 4</h2>
+              <h3 class="data_title_sub">Live data</h3>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Parity: <span class="data_item_value" id="parity3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Debug: <span class="data_item_value" id="debug3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Error: <span class="data_item_value" id="error3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Warning: <span class="data_item_value" id="warning3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Motion on going:
+                  <span class="data_item_value" id="motionOnGoing3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  On Target position:
+                  <span class="data_item_value" id="onTargetPosition3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Driver state:
+                  <span class="data_item_value" id="driverState3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Working mode:
+                  <span class="data_item_value" id="workingMode3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Target position:
+                  <span class="data_item_value" id="targetPosition3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual position:
+                  <span class="data_item_value" id="actualPosition3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual position°:
+                  <span class="data_item_value" id="actualPositionDeg3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Actual torque:
+                  <span class="data_item_value" id="actualTorque3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Actual frequency:
+                  <span class="data_item_value" id="actualFrequency3"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Error code:
+                  <span class="data_item_value" id="errorCode3"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Warning code:
+                  <span class="data_item_value" id="warningCode3"></span>
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="data">
+            <ul class="data_list">
+              <h2 class="data_title">Cartesian Data</h2>
+              <h3 class="data_title_sub">Live data</h3>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Axes X: <span class="data_item_value" id="axesX"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Axes Y: <span class="data_item_value" id="axesY"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Axes Z: <span class="data_item_value" id="axesZ"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Axes G°: <span class="data_item_value" id="axesG"></span>
+                </p>
+              </li>
+              
+              <ul class="data_list">
+              <h2 class="data_title">MASTER</h2>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Parity: <span class="data_item_value" id="parity4"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Debug: <span class="data_item_value" id="debug4"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Error: <span class="data_item_value" id="error4"></span>
+                </p>
+              </li>
+              <li>
+                <p class="data_item">
+                  Warning: <span class="data_item_value" id="warning4"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Motion on going:
+                  <span class="data_item_value" id="motionOnGoing4"></span>
+                </p>
+              </li>
+                            <li>
+                <p class="data_item">
+                  Error code:
+                  <span class="data_item_value" id="errorCode4"></span>
+                </p>
+              </li>
+              <li class="data_item_light">
+                <p class="data_item">
+                  Warning code:
+                  <span class="data_item_value" id="warningCode4"></span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section section_chart">
+      <div class="section_container">
+        <div class="button">
+          <button class="button_item_start" id="start_btn_chart">START</button>
+          <button class="button_item_stop" id="stop_btn_chart">STOP</button>
+          <button class="button_item_restart" id="restart_btn_chart">
+            RESTART
+          </button>
+        </div>
+        <div class="canvas_container">
+          <div class="canvas">
+            <h2 class="canvas_title">Position</h2>
+            <canvas class="canvas_item" id="position"></canvas>
+          </div>
+
+          <div class="canvas">
+            <h2 class="canvas_title">Frequency</h2>
+            <canvas class="canvas_item" id="frequency"></canvas>
+          </div>
+          <div class="canvas">
+            <h2 class="canvas_title">Torque</h2>
+            <canvas class="canvas_item" id="torque"></canvas>
+          </div>
+          <div class="canvas">
+            <h2 class="canvas_title">Axes X, Y, Z and Gamma</h2>
+            <canvas class="canvas_item" id="cartesian"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--
+CHART SCRIPT
+-->
+    <script>
+      let isRenderingPos = true;
+      const position = document.getElementById("position").getContext("2d");
+      const chartPos = new Chart(position, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Axes 1",
+              data: [],
+              borderColor: "blue",
+              backgroundColor: "blue",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 2",
+              data: [],
+              borderColor: "yellow",
+              backgroundColor: "yellow",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 3",
+              data: [],
+              borderColor: "green",
+              backgroundColor: "green",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 4",
+              data: [],
+              borderColor: "red",
+              backgroundColor: "red",
+              fill: false,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+            y: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+          },
+        },
+      });
+
+      function startRenderingPos() {
+        isRenderingPos = true;
+        renderChartsPos();
+      }
+
+      function stopRenderingPos() {
+        isRenderingPos = false;
+      }
+
+      function renderChartsPos() {
+        socket.on("data", (data) => {
+          if (!isRenderingPos) {
+            return;
+          }
+          const currentTime = new Date().toLocaleTimeString();
+          chartPos.data.labels.push(currentTime);
+          for (let i = 0; i < 4; i++) {
+            chartPos.data.datasets[i].data.push(data.actualPosition[i]);
+          }
+        if (chartPos.data.labels.length > 300) {
+      chartPos.data.labels.shift();
+      for (let i = 0; i < 4; i++) {
+        chartPos.data.datasets[i].data.shift();
+      }
+    }
+          chartPos.update("none");
+        });
+      }
+
+      document
+        .getElementById("start_btn_chart")
+        .addEventListener("click", () => {
+          startRenderingPos();
+        });
+
+      document
+        .getElementById("stop_btn_chart")
+        .addEventListener("click", () => {
+          stopRenderingPos();
+        });
+
+      document
+        .getElementById("restart_btn_chart")
+        .addEventListener("click", () => {
+          chartPos.data.datasets[0].data = [];
+          chartPos.data.labels = [];
+          chartPos.update("none");
+        });
+    </script>
+    <script>
+      let isRenderingFreq = true;
+      const frequency = document.getElementById("frequency").getContext("2d");
+      const chartFreq = new Chart(frequency, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Axes 1",
+              data: [],
+              borderColor: "blue",
+              backgroundColor: "blue",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 2",
+              data: [],
+              borderColor: "yellow",
+              backgroundColor: "yellow",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 3",
+              data: [],
+              borderColor: "green",
+              backgroundColor: "green",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes 4",
+              data: [],
+              borderColor: "red",
+              backgroundColor: "red",
+              fill: false,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+            y: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+          },
+        },
+      });
+
+      function startRenderingFreq() {
+        isRenderingFreq = true;
+        renderChartsFreq();
+      }
+      function stopRenderingFreq() {
+        isRenderingFreq = false;
+      }
+
+function renderChartsFreq() {
+  socket.on("data", (data) => {
+    if (!isRenderingFreq) {
+      return;
+    }
+    const currentTime = new Date().toLocaleTimeString();
+    chartFreq.data.labels.push(currentTime);
+    for (let i = 0; i < 4; i++) {
+      chartFreq.data.datasets[i].data.push(data.actualFrequency[i]);
+    }
+    if (chartFreq.data.labels.length > 300) {
+      chartFreq.data.labels.shift();
+      for (let i = 0; i < 4; i++) {
+        chartFreq.data.datasets[i].data.shift();
+      }
+    }
+    chartFreq.update("none");
+  });
+}
+      document
+        .getElementById("start_btn_chart")
+        .addEventListener("click", () => {
+          startRenderingFreq();
+        });
+
+      document
+        .getElementById("stop_btn_chart")
+        .addEventListener("click", () => {
+          stopRenderingFreq();
+        });
+      document
+        .getElementById("restart_btn_chart")
+        .addEventListener("click", () => {
+          chartFreq.data.datasets[0].data = [];
+          chartFreq.data.labels = [];
+          chartFreq.update("none");
+        });
+    </script>
+    <script>
+let isRenderingTorq = true;
+const torque = document.getElementById("torque").getContext("2d");
+const chartTorq = new Chart(torque, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Axes 1",
+        data: [],
+        borderColor: "blue",
+        backgroundColor: "blue",
+        fill: false,
+        pointRadius: 0,
+      },
+      {
+        label: "Axes 2",
+        data: [],
+        borderColor: "yellow",
+        backgroundColor: "yellow",
+        fill: false,
+        pointRadius: 0,
+      },
+      {
+        label: "Axes 3",
+        data: [],
+        borderColor: "green",
+        backgroundColor: "green",
+        fill: false,
+        pointRadius: 0,
+      },
+      {
+        label: "Axes 4",
+        data: [],
+        borderColor: "red",
+        backgroundColor: "red",
+        fill: false,
+        pointRadius: 0,
+      },
+    ],
+  },
+  options: {
+    normalized: true,
+    responsive: true,
+    spanGaps: true,
+    scales: {
+      x: {
+        grid: {
+          color: "grey",
+          borderColor: "grey",
+          tickColor: "grey",
+        },
+        border: {
+          color: "grey",
+        },
+      },
+      y: {
+        grid: {
+          color: "grey",
+          borderColor: "grey",
+          tickColor: "grey",
+        },
+        border: {
+          color: "grey",
+        },
+      },
+    },
+  },
+});
+
+function startRenderingTorq() {
+  isRenderingTorq = true;
+  renderChartsTorq();
+}
+
+function stopRenderingTorq() {
+  isRenderingTorq = false;
+}
+
+function renderChartsTorq() {
+  socket.on("data", (data) => {
+    if (!isRenderingTorq) {
+      return;
+    }
+    const currentTime = new Date().toLocaleTimeString();
+    chartTorq.data.labels.push(currentTime);
+    for (let i = 0; i < 4; i++) {
+      chartTorq.data.datasets[i].data.push(data.actualTorque[i]);
+    }
+    if (chartTorq.data.labels.length > 300) {
+      chartTorq.data.labels.shift();
+      for (let i = 0; i < 4; i++) {
+        chartTorq.data.datasets[i].data.shift();
+      }
+    }
+    chartTorq.update("none");
+  });
+}
+
+document.getElementById("start_btn_chart").addEventListener("click", () => {
+  startRenderingTorq();
+});
+
+document.getElementById("stop_btn_chart").addEventListener("click", () => {
+  stopRenderingTorq();
+});
+
+document.getElementById("restart_btn_chart").addEventListener("click", () => {
+  for (let i = 0; i < 4; i++) {
+    chartTorq.data.datasets[i].data = [];
+  }
+  chartTorq.data.labels = [];
+  chartTorq.update("none");
+});
+    </script>
+    <script>
+      let isRenderingCart = true;
+      const cartesian = document.getElementById("cartesian").getContext("2d");
+      const chartCart = new Chart(cartesian, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Axes X",
+              data: [],
+              borderColor: "blue",
+              backgroundColor: "blue",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes Y",
+              data: [],
+              borderColor: "yellow",
+              backgroundColor: "yellow",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes Z",
+              data: [],
+              borderColor: "green",
+              backgroundColor: "green",
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: "Axes G",
+              data: [],
+              borderColor: "red",
+              backgroundColor: "red",
+              fill: false,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+            y: {
+              grid: {
+                color: "grey",
+                borderColor: "grey",
+                tickColor: "grey",
+              },
+              border: {
+                color: "grey",
+              },
+            },
+          },
+        },
+      });
+
+      function startRenderingCart() {
+        isRenderingCart = true;
+        renderChartsCart();
+      }
+      function stopRenderingCart() {
+        isRenderingCart = false;
+      }
+
+      function renderChartsCart() {
+        socket.on("data", (data) => {
+          if (!isRenderingCart) {
+            return;
+          }
+          const currentTime = new Date().toLocaleTimeString();
+          chartCart.data.labels.push(currentTime);
+
+          chartCart.data.datasets[0].data.push(data.axesX);
+          chartCart.data.datasets[1].data.push(data.axesY);
+          chartCart.data.datasets[2].data.push(data.axesZ);
+          chartCart.data.datasets[3].data.push(data.axesG);
+          if (chartCart.data.labels.length > 300) {
+            chartCart.data.labels.shift();
+              for (let i = 0; i < 4; i++) {
+              chartCart.data.datasets[i].data.shift();
+            }
+          }
+          
+          
+          chartCart.update("none");
+        });
+      }
+   
+      document
+        .getElementById("start_btn_chart")
+        .addEventListener("click", () => {
+          startRenderingCart();
+        });
+
+      document
+        .getElementById("stop_btn_chart")
+        .addEventListener("click", () => {
+          stopRenderingCart();
+        });
+      document
+        .getElementById("restart_btn_chart")
+        .addEventListener("click", () => {
+          chartCart.data.datasets[0].data = [];
+          chartCart.data.datasets[1].data = [];
+          chartCart.data.datasets[2].data = [];
+          chartCart.data.datasets[3].data = [];
+          chartCart.data.labels = [];
+          chartCart.update("none");
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,310 @@
+{
+	"groups":[
+	{
+		"group":1,
+		"description":"drive_error"
+	},
+	{
+		"group":2,
+		"description":"master_error"
+	},
+	{
+		"group":3,
+		"description":"backend_error"
+	},
+	{
+		"group":4,
+		"description":"frontend_error"
+	}
+	],
+	"errors":[
+	{
+		"group":1,
+		"id":1,
+		"message":"Actual position higher than max allowed",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+ {
+		"group":1,
+		"id":2,
+		"message":"Actual position lower than min allowed",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+ {
+		"group":1,
+		"id":3,
+		"message":"Actual torque higher than max allowed",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+  {
+		"group":1,
+		"id":4,
+		"message":"Actual torque higher than max allowed",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":1,
+		"id":8,
+		"message":"Warning code higher than allowed",
+		"description":"FATAL ERROR: should never happen. The warning code generated is higher the max limit",
+		"cause":"cause",
+		"solution":"solution"
+	},
+ 	{
+		"group":1,
+		"id":9,
+		"message":"Connection to master timeout",
+		"description":"The master didn't sent any request for a time longre than the wathc-dog timeout.",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	 	{
+		"group":1,
+		"id":10,
+		"message":"Wrong configuration",
+		"description":"The configured pin for Chip Selection for SPI slave is not allowed. Change the configuraion settings.",
+		"cause":"cause",
+		"solution":"solution"
+	},
+  {
+		"group":1,
+		"id":20,
+		"message":"Wrong setup microstepping",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+  {
+		"group":1,
+		"id":21,
+		"message":"Wrong setup microstepping",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+  {
+		"group":1,
+		"id":22,
+		"message":"Driver model unknown",
+		"description":"In the setup procedure of the microstepping resolution, the master passed to the slave an unknown model of driver",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":1,
+		"id":50,
+		"message":"Driver state unknown",
+		"description":"FATAL ERROR: should never happen. The driver state number is different from the known ones",
+		"cause":"cause",
+		"solution":"solution"
+	},
+ 	{
+		"group":1,
+		"id":51,
+		"message":"Working mode unknown",
+		"description":"FATAL ERROR: should never happen. The working mode number is different from the known ones",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":1,
+		"message":"Master in error: error to be removed",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},	
+	{
+		"group":2,
+		"id":11,
+		"message":"Wrong master state",
+		"description":"FATAL ERROR: should never happen. Master State in impossible state",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":30,
+		"message":"Batteries low voltage",
+		"description":"The charging level of the batteries is too low to continue the operations",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":100,
+		"message":"Driver 1 in error",
+		"description":"Driver 1 in error",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":101,
+		"message":"Driver 2 in error",
+		"description":"Driver 2 in error",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":102,
+		"message":"Driver 3 in error",
+		"description":"Driver 3 in error",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":103,
+		"message":"Driver 4 in error",
+		"description":"Driver 4 in error",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":104,
+		"message":"Driver 5 in error",
+		"description":"Driver 5 in error",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":110,
+		"message":"Driver 1 lost communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+		{
+		"group":2,
+		"id":111,
+		"message":"Driver 2 lost communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+		{
+		"group":2,
+		"id":112,
+		"message":"Driver 3 lost communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+		{
+		"group":2,
+		"id":113,
+		"message":"Driver 4 lost communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+		{
+		"group":2,
+		"id":114,
+		"message":"Driver 5 lost communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":120,
+		"message":"Driver 1 in setup_needed state",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":121,
+		"message":"Driver 2 in setup_needed state",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":122,
+		"message":"Driver 3 in setup_needed state",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":123,
+		"message":"Driver 4 in setup_needed state",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":124,
+		"message":"Driver 5 in setup_needed state",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+ 	{
+		"group":2,
+		"id":125,
+		"message":"Driver 1 software version not updated",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":126,
+		"message":"Driver 2 software version not updated",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":127,
+		"message":"Driver 3 software version not updated",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":128,
+		"message":"Driver 4 software version not updated",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":2,
+		"id":129,
+		"message":"Driver 5 software version not updated",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	},
+	{
+		"group":3,
+		"id":1,
+		"message":"Lost SPI Communication",
+		"description":"description",
+		"cause":"cause",
+		"solution":"solution"
+	}
+	]
+}

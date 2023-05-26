@@ -1,0 +1,30 @@
+const { SerialPort } = require('serialport');
+const { ReadlineParser } = require('@serialport/parser-readline');
+
+const port = new SerialPort({path: "/dev/ttyS0"
+, 
+  baudRate: 115200,
+});
+
+const parser = new ReadlineParser();
+port.pipe(parser);
+
+let data = '';
+
+parser.on('data', (line) => {
+  console.log(`Received data: ${line}`);
+  data = line;
+  // io.emit('data', data); // send data to all connected clients
+});
+
+port.on('open', () => {
+  console.log('Port is open!');
+});
+
+port.on('error', (err) => {
+  console.error('Error:', err);
+});
+
+port.on('close', () => {
+  console.log('Port is closed!');
+});
