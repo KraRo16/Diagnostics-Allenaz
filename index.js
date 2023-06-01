@@ -2,7 +2,11 @@ const spi = require("spi-device");
 const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
-const io = require("socket.io")(server);
+const io = require("socket.io")(server, {
+  cors: {
+      origin: '*'
+  }
+});
 const spaceMouse = require("./spacemouse").spaceMouse;
 const { logger, longLogger, copyLoggerFile } = require("./logger");
 const deleteOldFiles = require("./delOldFiles");
@@ -19,16 +23,18 @@ const gpioSpi = new Gpio(gpioPinSpi, "in", "both");
 const gpioPinComm = 6;
 const gpioComm = new Gpio(gpioPinComm, "in", "both");
 
-let sliderTest = {};
-let slidersData = [];
-
 const messageLength = 88;
 
 let sendData;
-let id_button;
-let interval;
-let intervalEmit;
+// let interval;
+// let intervalEmit;
 let batteryStatus;
+let sliderValues = [];
+let slidersDataFront = [];
+
+
+
+
 
 let parity = [];
 let debug = [];
@@ -68,11 +74,54 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
-io.on("connection", (socket) => {
-    socket.on('test', (serialData) => {
+io.once("connection", (socket) => {
+    socket.on('serialComm', (serialData) => {
       console.log(`Received data from server: ${serialData}`);
       batteryStatus = serialData;
+      logger.log(
+        "info",
+        `${Date.now()},Btr:${batteryStatus}`
+      );
     });
+
+    socket.on('message', (changedValues) => {
+      console.log("Fresh data from front", changedValues)
+      for (const key in changedValues) {
+        if (changedValues.hasOwnProperty(key)) {
+          sliderValues[key] = changedValues[key];
+        }
+      }
+      console.log("Var with data from front", sliderValues); 
+    });
+ 
+
+    // socket.on('sliderValues', (updatedValues) => {
+    //   console.log('Get Value:', updatedValues);
+  
+    //   if (!Array.isArray(updatedValues) && typeof updatedValues === 'object') {
+    //     updatedValues = [updatedValues];
+    //   }
+  
+    //   updatedValues.forEach((changedSlider) => {
+    //     const index = slidersDataFront.findIndex(
+    //       (slider) => slider.value === changedSlider.value
+    //     );
+  
+    //     if (index !== -1) {
+    //       slidersDataFront[index] = changedSlider;
+    //     } else {
+    //       slidersDataFront.push(changedSlider);
+    //     }
+    //   });
+  
+    //   console.log('Get New Value:', slidersDataFront);
+    // });
+
+
+
+
+
+
   sendData = () => {
     const message = [
       {
@@ -83,9 +132,6 @@ io.on("connection", (socket) => {
           spaceMouse.a+100, spaceMouse.a >> 8,
           spaceMouse.b+100, spaceMouse.b >> 8,
           spaceMouse.c+100, spaceMouse.c >> 8,
-          sliderTest.name, sliderTest.value,
-          sliderTest.value, sliderTest.value,
-          sliderTest.value,
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -93,14 +139,13 @@ io.on("connection", (socket) => {
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-          0xff, 0xff, 0xff, 0xff,
+          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         ]),
         receiveBuffer: Buffer.alloc(messageLength),
         byteLength: messageLength,
         speedHz: 100000,
       },
     ];
-
     let gpioValueSpi = gpioSpi.readSync();
     let gpioValueComm = gpioComm.readSync();
     // logger.log("info", `${gpioValue}, ${Date.now()}`);
@@ -240,11 +285,15 @@ io.on("connection", (socket) => {
     });
   };
   intervalEmit = setInterval(dataEmit, 100);
+
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected!");
+  });
 });
 
-
-server.listen(3000, () => {
-  console.log("Server started on port 3000");
+server.listen(3001, () => {
+  console.log("Server started on port 3001");
 });
 
 setInterval(deleteOldFiles, 60 * 1000);

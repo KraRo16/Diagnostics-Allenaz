@@ -46,136 +46,112 @@
       let position_sensor_offset_kinematics =  [1174 , 830 , 235 , 420];
       let position_sensor_dir_inverted_kinematics =  [-1 , 1 , 1 , 1] ;
 
-    function addErrorCode(k, code, errorDB) {
-  if (code !== 0 && code !== -1 && code !== undefined) {
-    for (let i = 0; i < errorCodes.length; i++) {
-      if (errorCodes[i] === code && senderErrorCodes[i] === k) {
-        return;
-      }
-    }
-    errorCodes.push(code);
-    senderErrorCodes.push(k);
-    toastr.options.timeOut = 0;
-    toastr.options.extendedTimeOut = 0;
-    toastr.options.preventDuplicates = true;
-    toastr.options.newestOnTop = false;
-    toastr.options.tapToDismiss = false;
-    // toastr.options.onclick = function() {
-    //     const modalElem = document.querySelector('.modal1');
-    //     modalElem.style.visibility = 'visible';
-    //     modalElem.style.opacity = 1;
-    //     window.addEventListener('keydown', closeModal);
-  
-    //     function closeModal(event) {
-    //       const target = event.target;
-  
-    //       if (
-    //         target === modalElem ||
-    //         (target.classList.contains('modal__close')) ||
-    //         event.code === 'Escape'
-    //       ) {
-    //         modalElem.style.opacity = 0;
-  
-    //         setTimeout(() => {
-    //           modalElem.style.visibility = 'hidden';
-    //         }, 300);
-  
-    //         window.removeEventListener('keydown', closeModal);
-    //       }
-    //     }
-    //   };
-    let group = null;
-    let message = '';
-    switch (k) {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-        message = `Axes${k + 1}`;
-        group = 1;
-        break;
-      case 4:
-        message = "Master";
-        group = 2;
-        break;
-    }
-    
-    const error = errorDB.errors.find((error) => error.id === code && error.group === group);
-    
-    if (error) {
-      const messageError = error.message;
-      const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> ${messageError}`);
-      notificationErrorIds.push(notificationIdError);
-    } else {
-      const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> Not found in DB`);
-      notificationErrorIds.push(notificationIdError);
-    }
-  }
-}
-        function addWarningCode(k, code, warningDB) {
-
-
-          if (code <= 16000 && code > 0) {
-            for (let i = 0; i < warningCodes.length; i++) {
-              if (warningCodes[i] === code && senderWarningCodes[i] === k) {
-                return;
-              }
-            }
-            warningCodes.push(code);
-            senderWarningCodes.push(k);
-            toastr.options.timeOut = 0;
-            toastr.options.extendedTimeOut = 0;
-            toastr.options.preventDuplicates = true;
-            toastr.options.newestOnTop = false;
-            toastr.options.tapToDismiss = false;
-            let message = '';
-            let group = null;
-            switch(k){
-              case 0:
-              case 1:
-              case 2:
-              case 3:
-                message = `Axes${k + 1}`;
-                group = 1;
-              break;
-              case 4:
-                message = "Master";
-                group = 2;
-              break;
-            }
-
-            const warning = warningDB.warnings.find((warning) => warning.id === code && warning.group === group);
-
-            if (warning) {
-              const messageWarning = warning.message;
-              const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> ${messageWarning}`);
-              notificationWarningIds.push(notificationIdWarning);
-            } else {
-              const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> Not found in DB`);
-              notificationWarningIds.push(notificationIdWarning);
-            }
-          } else if (code > 16000) {
-            let codeToRemove = code - 16000;
-            const index = warningCodes.indexOf(codeToRemove);
-            if (index > -1) {
-              warningCodes.splice(index, 1);
-              const notificationIdToRemove = notificationWarningIds[index];
-              toastr.clear(notificationIdToRemove); 
-              notificationWarningIds.splice(index, 1); 
-            }
-          }else if(code === 0){
-            let index = senderWarningCodes.indexOf(k);
-            while(index>-1)
-            {
-              warningCodes.splice(index, 1);
-              senderWarningCodes.splice(index, 1);
-              const notificationIdToRemove = notificationWarningIds[index];
-              toastr.clear(notificationIdToRemove); 
-              notificationWarningIds.splice(index, 1); 
-              index = senderWarningCodes.indexOf(k);
+      function addErrorCode(k, code, errorDB) {
+        if (code !== 0 && code !== -1 && code !== undefined) {
+          for (let i = 0; i < errorCodes.length; i++) {
+            if (errorCodes[i] === code && senderErrorCodes[i] === k) {
+              return;
             }
           }
+          errorCodes.push(code);
+          senderErrorCodes.push(k);
+          toastr.options.timeOut = 0;
+          toastr.options.extendedTimeOut = 0;
+          toastr.options.preventDuplicates = true;
+          toastr.options.newestOnTop = false;
+          toastr.options.tapToDismiss = false;
+
+          let group = null;
+          let message = '';
+          switch (k) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+              message = `Axes${k + 1}`;
+              group = 1;
+              break;
+            case 4:
+              message = "Master";
+              group = 2;
+              break;
+          }
+        
+          const error = errorDB.errors.find((error) => error.id === code && error.group === group);
+          
+          if (error) {
+            const messageError = error.message;
+            const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> ${messageError}`);
+            notificationErrorIds.push(notificationIdError);
+          } else {
+            const notificationIdError = toastr.error(`${message}: Error code ${code}<br/> Not found in DB`);
+            notificationErrorIds.push(notificationIdError);
+          }
         }
+      }
+        
+      function addWarningCode(k, code, warningDB) {
+        if (code <= 16000 && code > 0) {
+              for (let i = 0; i < warningCodes.length; i++) {
+                if (warningCodes[i] === code && senderWarningCodes[i] === k) {
+                  return;
+                }
+              }
+              warningCodes.push(code);
+              senderWarningCodes.push(k);
+              toastr.options.timeOut = 0;
+              toastr.options.extendedTimeOut = 0;
+              toastr.options.preventDuplicates = true;
+              toastr.options.newestOnTop = false;
+              toastr.options.tapToDismiss = false;
+              let message = '';
+              let group = null;
+              switch(k){
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                  message = `Axes${k + 1}`;
+                  group = 1;
+                break;
+                case 4:
+                  message = "Master";
+                  group = 2;
+                break;
+              }
+
+              const warning = warningDB.warnings.find((warning) => warning.id === code && warning.group === group);
+
+              if (warning) {
+                const messageWarning = warning.message;
+                const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> ${messageWarning}`);
+                notificationWarningIds.push(notificationIdWarning);
+              } else {
+                const notificationIdWarning = toastr.warning(`${message}: Warning code ${code}<br/> Not found in DB`);
+                notificationWarningIds.push(notificationIdWarning);
+              }
+          } else if (code > 16000) {
+              let codeToRemove = code - 16000;
+              const index = warningCodes.indexOf(codeToRemove);
+              if (index > -1) {
+                warningCodes.splice(index, 1);
+                const notificationIdToRemove = notificationWarningIds[index];
+                toastr.clear(notificationIdToRemove); 
+                notificationWarningIds.splice(index, 1); 
+              }
+          }else if(code === 0){
+              let index = senderWarningCodes.indexOf(k);
+              while(index>-1)
+              {
+                warningCodes.splice(index, 1);
+                senderWarningCodes.splice(index, 1);
+                const notificationIdToRemove = notificationWarningIds[index];
+                toastr.clear(notificationIdToRemove); 
+                notificationWarningIds.splice(index, 1); 
+                index = senderWarningCodes.indexOf(k);
+              }
+          }
+      }
 
       socket.on("data", (data) => {
         for (let i = 0; i < 4; i++) {
@@ -205,7 +181,7 @@
             data.errorCode[i];
             document.getElementById(`warningCode${i}`).innerHTML =
             data.warningCode[i];
-}
+        }
 
         // CARTESIAN DATA
         document.getElementById("axesX").innerHTML = Math.round(data.axesX);
@@ -229,7 +205,7 @@
         let previousValue = 100;
         document.getElementById('battery-value').textContent = Math.min(data.batteryStatus, previousValue);
         previousValue = data.batteryStatus;
-            document.getElementById('battery-level').style.width = data.batteryStatus + '%';
+        document.getElementById('battery-level').style.width = data.batteryStatus + '%';
 
               // console.log(`Battery status: ${data.batteryStatus}`);
 
@@ -244,12 +220,10 @@
             allErrorZero = false;
           }
           addErrorCode(k ,currentErrorCode, errorDB);
-
-        //Save warning code in array, controll if into the range 1-16000, calc and delete if more than 16000   
-        let currentWarningCode = data.warningCode[k];
+          let currentWarningCode = data.warningCode[k];
 
           addWarningCode(k, currentWarningCode, warningDB);
-      }
+       }
             if (allErrorZero) {
             errorCodes.length = 0;
             notificationErrorIds.forEach(notificationIdError => toastr.clear(notificationIdError));

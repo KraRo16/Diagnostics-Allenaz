@@ -1,7 +1,7 @@
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 const { io } = require("socket.io-client");
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3001');
 
 const port = new SerialPort({
   path: '/dev/ttyS0',
@@ -26,7 +26,7 @@ parser.on('data', (line) => {
         console.log("Battery status:", formattedValue,"%");
         let serialData;
         serialData = formattedValue
-        socket.emit('test', serialData);
+        socket.emit('serialComm', serialData);
         console.log("Send data to server", serialData)
         break;
       case '130':
